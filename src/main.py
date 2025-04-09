@@ -1,4 +1,4 @@
-from pprint import pprint
+# from pprint import pprint
 
 from src.views import main_info
 
@@ -7,7 +7,7 @@ from src.views import main_info
 
 
 if __name__ == "__main__":
-    date_request = "2018-05-20 15:00:00"
+    date_request = "2025-04-10 20:30:00"
     result_views = main_info(date_request)
-    pprint(result_views)
+    print(result_views)
     # result_repors = spending_by_category()
