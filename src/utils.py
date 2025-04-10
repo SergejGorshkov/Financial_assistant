@@ -24,6 +24,19 @@ def get_time_for_greeting() -> str:
         return "Доброй ночи!"
 
 
+def read_data_file() -> DataFrame:
+    """
+        Функция получения объекта DataFrame с транзакциями из файла для последующего анализа.
+        Считывает данные из файла.
+        Возвращает датафрейм с транзакциями, отсортированный по убыванию даты.
+    """
+    df_excel = pd.read_excel(PATH_TO_EXCEL, sheet_name="Отчет по операциям")  # Чтение данных из Excel-файла
+
+    df_excel["Номер карты"] = df_excel["Номер карты"].fillna("Карта не указана")  # В ячейки без номера карты
+    # записывается "Карта не указана"
+    return df_excel
+
+
 # '2025.04.10 20:30:00'
 def get_date_range(date_time: str) -> tuple[datetime, datetime]:
     """
@@ -36,26 +49,27 @@ def get_date_range(date_time: str) -> tuple[datetime, datetime]:
     start_date = end_date.replace(day=1, hour=0, minute=0, second=0)  # Начальная граница выборки в формате
     # datetime - первое число указанного месяца
 
-    # Возврат дат начала и конца выборки с их преобразованием в строку в формате ДД.ММ.ГГГГ
+    # Возврат дат начала и конца выборки в формате ГГГГ-ММ-ДД
     return start_date, end_date
 
 
-
-#date_start '2025.04.01 00:00:00'
-#date_end '2025.04.10 20:30:00'
 def get_slice_of_data(file_path: str, start_date: datetime, end_date: datetime) -> DataFrame:
     """
         Функция получения выборки транзакций из Excel-файла для последующего анализа.
         Принимает строку с путем к файлу с данными о транзакциях, даты начала и конца выборки в виде объектов datetime.
         Возвращает датафрейм с транзакциями за указанный период, отсортированный по возрастанию даты.
     """
-    df = pd.read_excel(file_path, sheet_name="Отчет по операциям")  # Чтение данных из Excel-файла
-    df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)  # Создание DF с датами транзакций
-    print(df["Дата операции"])  # Для тестирования
-    filtered_df = df[(df["Дата операции"] >= start_date) & (df["Дата операции"] <= end_date)]  # Здесь предварительно
-    # нужно привести формат дат к одному виду.Разобраться с кодом. Сделать по-своему
-    print(filtered_df)
+
+    df = read_data_file()  # Чтение данных из Excel-файла
+
+    df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)  # Преобразование дат в столбце
+    # "Дата операции" в формат datetime для выборки по интервалу дат
+
+    slice_df = df[df["Дата операции"].between(start_date, end_date)]  # Выборка транзакций для заданного
+    # промежутка дат
+
+    return slice_df
+
+
+
     # sorted_df = filtered_df.sort_values(by="Дата операции")
-    return  # sorted_df
-
-
