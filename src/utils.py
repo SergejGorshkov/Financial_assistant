@@ -6,7 +6,6 @@ from datetime import datetime
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-from pandas import DataFrame
 
 PATH_TO_EXCEL = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "operations.xlsx")
 PATH_TO_USER_SETTINGS_JSON = os.path.join(os.path.dirname(os.path.dirname(__file__)), "user_settings.json")
@@ -39,7 +38,7 @@ def get_date_range(date_time: str) -> tuple[datetime, datetime]:
     return start_date, end_date
 
 
-def read_data_file() -> DataFrame:
+def read_data_file() -> pd.DataFrame:
     """
         Функция получения объекта DataFrame с транзакциями из файла для последующего анализа.
         Считывает данные из файла.
@@ -54,7 +53,7 @@ def read_data_file() -> DataFrame:
     return df_excel
 
 
-def get_slice_of_data(start_date: datetime, end_date: datetime) -> DataFrame:
+def get_slice_of_data(start_date: datetime, end_date: datetime) -> pd.DataFrame:
     """
         Функция получения выборки транзакций из Excel-файла для последующего анализа.
         Принимает даты начала и конца выборки в виде объектов datetime.
@@ -92,7 +91,7 @@ def get_time_for_greeting() -> str:
         return "Доброй ночи!"
 
 
-def get_summary_card_data(df: DataFrame) -> list[dict]:
+def get_summary_card_data(df: pd.DataFrame) -> list[dict]:
     """
     Функция получения сводных данных о расходах по всем картам клиента (в т.ч. отдельно для всех неуказанных карт).
     Принимает данные о транзакциях в формате DataFrame.
@@ -106,8 +105,8 @@ def get_summary_card_data(df: DataFrame) -> list[dict]:
 
     spent_df = df[df["Сумма платежа"] < 0]  # DataFrame только с расходами
 
-    card_grouped = spent_df.groupby(by="Номер карты")  # Группировка данных по номерам карт
-    cards_sum = card_grouped["Сумма операции с округлением"].sum().reset_index()  # Расчет сумм расходов по каждой карте
+    card_grouped = spent_df.groupby(by="Номер карты", as_index=False)  # Группировка данных по номерам карт
+    cards_sum = card_grouped["Сумма операции с округлением"].sum()  # Расчет сумм расходов по каждой карте
 
     result = []
     # Формирование данных для вывода сводной информации по каждой карте (в т.ч. отдельно для всех неуказанных карт)
@@ -124,7 +123,7 @@ def get_summary_card_data(df: DataFrame) -> list[dict]:
     return result
 
 
-def top_5_transactions_by_sum(df: DataFrame) -> list[dict]:
+def top_5_transactions_by_sum(df: pd.DataFrame) -> list[dict]:
     """
     Функция получения ТОП-5 транзакций по величине суммы.
     Принимает данные о транзакциях в формате DataFrame.
@@ -240,7 +239,7 @@ def actual_stocks() -> list[dict]:
         print(f"Ошибка! Файл по адресу {PATH_TO_USER_SETTINGS_JSON} не найден.")
         logger.error(f"Ошибка! Файл по адресу {PATH_TO_USER_SETTINGS_JSON} не найден.")
 
-    url = "http://api.marketstack.com/v2/eod/latest"  # URL для API-запроса курсов акций (End-of-Day Data)
+    url = "http://api.marketstack.com/v1/eod/latest"  # URL для API-запроса курсов акций (End-of-Day Data)
     # Ниже - параметры для запроса (тикеры акций, перечисленные через запятую)
     payload = {"symbols": ",".join(symbols)}
 
@@ -249,7 +248,7 @@ def actual_stocks() -> list[dict]:
 
     headers = {"access_key": api_key}  # Заголовок запроса по API-ключу для авторизации на Marketstack
 
-    response = requests.get(url, headers=headers, params=payload)  # API-запрос на получение курса акций
+    response = requests.get(url, params=payload, headers=headers)  # API-запрос на получение курса акций
 
     if response.status_code != 200:  # Если запрос неудачный...
         print(f"Неудачная попытка получить курсы акций {symbols}. Возможная причина: {response.reason}.")
@@ -270,5 +269,3 @@ def actual_stocks() -> list[dict]:
         )
 
     return result
-
-    # sorted_df = filtered_df.sort_values(by="Дата операции")

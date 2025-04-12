@@ -1,8 +1,19 @@
 import json
+import logging
+import os
 
-from src.utils import get_time_for_greeting, get_date_range, PATH_TO_EXCEL, get_slice_of_data, read_data_file, \
+from src.utils import get_time_for_greeting, get_date_range, PATH_TO_EXCEL, get_slice_of_data, \
     get_summary_card_data, top_5_transactions_by_sum, actual_currencies, actual_stocks
 
+
+PATH_TO_LOG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs", "views.log")
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler(PATH_TO_LOG_FILE, "w", encoding="utf-8")
+file_formatter = logging.Formatter("%(asctime)s - %(filename)s - %(funcName)s - %(levelname)s: %(message)s")
+file_handler.setFormatter(file_formatter)
+logger.addHandler(file_handler)
 
 def main_info(date_time: str) -> str:
     """
@@ -14,11 +25,15 @@ def main_info(date_time: str) -> str:
     5) стоимость акций (End-of-Day Data) из S&P500.
     """
 
+    logger.debug(f"Вызвана функция 'main_info' страницы 'Главная'.")
+
     # Получение интервала дат для анализа транзакций
     start_date, end_date = get_date_range(date_time)
+    logger.info("Определен период времени для выборки транзакций.")
 
     # Получение выборки данных за указанный период
     df = get_slice_of_data(start_date, end_date)
+    logger.info(f"Сделана выборка транзакций в диапазоне дат {start_date} - {end_date}.")
 
     data = {
         "greeting": get_time_for_greeting(),  # Приветствие в зависимости от текущего времени суток
@@ -27,6 +42,7 @@ def main_info(date_time: str) -> str:
         # "currency_rates": actual_currencies(),  # Информация по текущим курсам валют (из `user_settings.json`)
         "stock_prices": actual_stocks()  # Информация по курсам (End-of-Day Data) акций (из `user_settings.json`)
     }
+    logger.info(f"Получена обобщенная информация по финансовым операциям в диапазоне дат {start_date} - {end_date}.")
 
     json_data = json.dumps(data, ensure_ascii=False, indent=4)
     return json_data
