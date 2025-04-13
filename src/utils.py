@@ -6,13 +6,10 @@ from datetime import datetime
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-from pandas import DataFrame
 
 PATH_TO_EXCEL = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "operations.xlsx")
 PATH_TO_USER_SETTINGS_JSON = os.path.join(os.path.dirname(os.path.dirname(__file__)), "user_settings.json")
 PATH_TO_LOG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs", "utils.log")
-
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -39,14 +36,16 @@ def get_date_range(date_time: str) -> tuple[datetime, datetime]:
     return start_date, end_date
 
 
-def read_data_file() -> DataFrame:
+def read_data_file() -> pd.DataFrame:
     """
         Функция получения объекта DataFrame с транзакциями из файла для последующего анализа.
         Считывает данные из файла.
         Возвращает датафрейм с транзакциями, отсортированный по убыванию даты.
     """
     df_excel = pd.read_excel(PATH_TO_EXCEL, sheet_name="Отчет по операциям")  # Чтение данных из Excel-файла
-
+    if df_excel.empty:  # Если данных нет, функция возвращает пустой DataFrame
+        print("Ошибка. Данные для анализа не обнаружены.")
+        return pd.DataFrame()
     df_excel["Номер карты"] = df_excel["Номер карты"].fillna("Карта не указана")  # В ячейки без номера карты
     # записывается "Карта не указана"
     logger.debug(f"Выполнено чтение файла {PATH_TO_EXCEL}.")
@@ -54,7 +53,7 @@ def read_data_file() -> DataFrame:
     return df_excel
 
 
-def get_slice_of_data(start_date: datetime, end_date: datetime) -> DataFrame:
+def get_slice_of_data(start_date: datetime, end_date: datetime) -> pd.DataFrame:
     """
         Функция получения выборки транзакций из Excel-файла для последующего анализа.
         Принимает даты начала и конца выборки в виде объектов datetime.
@@ -62,14 +61,15 @@ def get_slice_of_data(start_date: datetime, end_date: datetime) -> DataFrame:
     """
 
     df = read_data_file()  # Чтение данных из Excel-файла
-
+    if df.empty:  # Если данных нет, функция возвращает пустой DataFrame
+        print("Ошибка. Данные для анализа не обнаружены.")
+        return pd.DataFrame()
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)  # Преобразование дат в столбце
     # "Дата операции" в формат datetime для выборки по интервалу дат
 
     slice_df = df[df["Дата операции"].between(start_date, end_date)]  # Выборка транзакций для заданного
     # промежутка дат
     logger.debug(f"Сделана выборка транзакций в диапазоне дат {start_date} - {end_date}.")
-
 
     return slice_df
 
@@ -80,7 +80,7 @@ def get_time_for_greeting() -> str:
     в зависимости от текущего времени (на момент запуска программы).
     """
     user_time_hour = datetime.now().hour  # Получение текущего времени (в часах)
-    logger.debug("Формируется приветствие пользователя.")
+    logger.debug("Формируется приветствие для пользователя.")
 
     if 5 <= user_time_hour < 12:
         return "Доброе утро!"
@@ -92,7 +92,7 @@ def get_time_for_greeting() -> str:
         return "Доброй ночи!"
 
 
-def get_summary_card_data(df: DataFrame) -> list[dict]:
+def get_summary_card_data(df: pd.DataFrame) -> list[dict]:
     """
     Функция получения сводных данных о расходах по всем картам клиента (в т.ч. отдельно для всех неуказанных карт).
     Принимает данные о транзакциях в формате DataFrame.
@@ -103,11 +103,13 @@ def get_summary_card_data(df: DataFrame) -> list[dict]:
       "cashback": 12.62
     }]
     """
-
+    if df.empty:  # Если данных нет, функция возвращает пустой список
+        print("Ошибка. Данные для анализа не обнаружены.")
+        return []
     spent_df = df[df["Сумма платежа"] < 0]  # DataFrame только с расходами
 
-    card_grouped = spent_df.groupby(by="Номер карты")  # Группировка данных по номерам карт
-    cards_sum = card_grouped["Сумма операции с округлением"].sum().reset_index()  # Расчет сумм расходов по каждой карте
+    card_grouped = spent_df.groupby(by="Номер карты", as_index=False)  # Группировка данных по номерам карт
+    cards_sum = card_grouped["Сумма операции с округлением"].sum()  # Расчет сумм расходов по каждой карте
 
     result = []
     # Формирование данных для вывода сводной информации по каждой карте (в т.ч. отдельно для всех неуказанных карт)
@@ -124,7 +126,7 @@ def get_summary_card_data(df: DataFrame) -> list[dict]:
     return result
 
 
-def top_5_transactions_by_sum(df: DataFrame) -> list[dict]:
+def top_5_transactions_by_sum(df: pd.DataFrame) -> list[dict]:
     """
     Функция получения ТОП-5 транзакций по величине суммы.
     Принимает данные о транзакциях в формате DataFrame.
@@ -136,9 +138,16 @@ def top_5_transactions_by_sum(df: DataFrame) -> list[dict]:
       "description": "Перевод Кредитная карта."
     }]
     """
+    if df.empty:  # Если данных нет, функция возвращает пустой список
+        print("Ошибка. Данные для анализа не обнаружены.")
+        return []
 
     # Отбор только успешных транзакций для формирования ТОП-5 по сумме
     filter_ok_transactions = df[df["Статус"] == "OK"]
+    if filter_ok_transactions.empty:  # Если данных после фильтрации нет, функция возвращает пустой список
+        print("Ошибка. После фильтрации по статусу операции данные для анализа не обнаружены.")
+        return []
+
     # Сортировка транзакций по убыванию суммы
     sorted_by_sum_df = filter_ok_transactions.sort_values(by="Сумма операции с округлением", ascending=False)
     # Выбор первых 5 транзакций по размеру суммы
@@ -162,7 +171,7 @@ def top_5_transactions_by_sum(df: DataFrame) -> list[dict]:
 
 def actual_currencies(base_currency: str = "RUB") -> list[dict]:
     """
-    Функция получения актуальных курсов валют (из файла `user_settings.json`).
+    Функция получения актуальных курсов валют (тикеры загружаются из файла `user_settings.json`).
     Принимает строку с тикером базовой валюты, относительно которой рассчитываются курсы валют из файла
     `user_settings.json` (по умолчанию - "RUB").
     Возвращает список словарей в формате:
@@ -181,9 +190,11 @@ def actual_currencies(base_currency: str = "RUB") -> list[dict]:
     except json.JSONDecodeError:
         print("Ошибка декодирования файла.")
         logger.error("Произошла ошибка декодирования файла.")
+        return []
     except FileNotFoundError:
         print(f"Ошибка! Файл по адресу {PATH_TO_USER_SETTINGS_JSON} не найден.")
         logger.error(f"Ошибка! Файл по адресу {PATH_TO_USER_SETTINGS_JSON} не найден.")
+        return []
 
     url = "https://api.apilayer.com/exchangerates_data/latest"  # URL для API-запроса текущих курсов валют
     # Ниже - параметры для запроса (базовая валюта (RUB) и список валют для получения курса относительно базовой,
@@ -236,11 +247,14 @@ def actual_stocks() -> list[dict]:
     except json.JSONDecodeError:
         print("Ошибка декодирования файла.")
         logger.error("Произошла ошибка декодирования файла.")
+        return []
+
     except FileNotFoundError:
         print(f"Ошибка! Файл по адресу {PATH_TO_USER_SETTINGS_JSON} не найден.")
         logger.error(f"Ошибка! Файл по адресу {PATH_TO_USER_SETTINGS_JSON} не найден.")
+        return []
 
-    url = "http://api.marketstack.com/v2/eod/latest"  # URL для API-запроса курсов акций (End-of-Day Data)
+    url = "http://api.marketstack.com/v1/eod/latest"  # URL для API-запроса курсов акций (End-of-Day Data)
     # Ниже - параметры для запроса (тикеры акций, перечисленные через запятую)
     payload = {"symbols": ",".join(symbols)}
 
@@ -249,7 +263,7 @@ def actual_stocks() -> list[dict]:
 
     headers = {"access_key": api_key}  # Заголовок запроса по API-ключу для авторизации на Marketstack
 
-    response = requests.get(url, headers=headers, params=payload)  # API-запрос на получение курса акций
+    response = requests.get(url, params=payload, headers=headers)  # API-запрос на получение курса акций
 
     if response.status_code != 200:  # Если запрос неудачный...
         print(f"Неудачная попытка получить курсы акций {symbols}. Возможная причина: {response.reason}.")
@@ -270,5 +284,3 @@ def actual_stocks() -> list[dict]:
         )
 
     return result
-
-    # sorted_df = filtered_df.sort_values(by="Дата операции")
