@@ -39,7 +39,7 @@ def main_info(date_time: str) -> str:
         "greeting": get_time_for_greeting(),  # Приветствие в зависимости от текущего времени суток
         "cards": get_summary_card_data(df),   # Сводная информации по каждой карте
         "top_transactions": top_5_transactions_by_sum(df),  # Сводная информации по ТОП-5 транзакциям по сумме операции
-        # "currency_rates": actual_currencies(),  # Информация по текущим курсам валют (из `user_settings.json`)
+        "currency_rates": actual_currencies(),  # Информация по текущим курсам валют (из `user_settings.json`)
         "stock_prices": actual_stocks()  # Информация по курсам (End-of-Day Data) акций (из `user_settings.json`)
     }
     logger.info(f"Получена обобщенная информация по финансовым операциям в диапазоне дат {start_date} - {end_date}.")

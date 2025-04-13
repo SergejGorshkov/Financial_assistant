@@ -24,6 +24,9 @@ def get_high_cashback_categories(df: pd.DataFrame, year: str, month: str) -> str
     месяце года.
     """
 
+    if df.empty:  # Если данных нет...
+        print("Ошибка. Данные для анализа не обнаружены.")
+        return ""
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)  # Преобразование дат в столбце
     # "Дата операции" в формат datetime для выборки за месяц
 

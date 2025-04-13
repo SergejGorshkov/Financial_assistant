@@ -45,7 +45,9 @@ def read_data_file() -> pd.DataFrame:
         Возвращает датафрейм с транзакциями, отсортированный по убыванию даты.
     """
     df_excel = pd.read_excel(PATH_TO_EXCEL, sheet_name="Отчет по операциям")  # Чтение данных из Excel-файла
-
+    if df_excel.empty:  # Если данных нет, функция возвращает пустой DataFrame
+        print("Ошибка. Данные для анализа не обнаружены.")
+        return pd.DataFrame()
     df_excel["Номер карты"] = df_excel["Номер карты"].fillna("Карта не указана")  # В ячейки без номера карты
     # записывается "Карта не указана"
     logger.debug(f"Выполнено чтение файла {PATH_TO_EXCEL}.")
@@ -61,7 +63,9 @@ def get_slice_of_data(start_date: datetime, end_date: datetime) -> pd.DataFrame:
     """
 
     df = read_data_file()  # Чтение данных из Excel-файла
-
+    if df.empty:  # Если данных нет, функция возвращает пустой DataFrame
+        print("Ошибка. Данные для анализа не обнаружены.")
+        return pd.DataFrame()
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], dayfirst=True)  # Преобразование дат в столбце
     # "Дата операции" в формат datetime для выборки по интервалу дат
 
@@ -102,7 +106,9 @@ def get_summary_card_data(df: pd.DataFrame) -> list[dict]:
       "cashback": 12.62
     }]
     """
-
+    if df.empty:  # Если данных нет, функция возвращает пустой список
+        print("Ошибка. Данные для анализа не обнаружены.")
+        return []
     spent_df = df[df["Сумма платежа"] < 0]  # DataFrame только с расходами
 
     card_grouped = spent_df.groupby(by="Номер карты", as_index=False)  # Группировка данных по номерам карт
@@ -135,9 +141,16 @@ def top_5_transactions_by_sum(df: pd.DataFrame) -> list[dict]:
       "description": "Перевод Кредитная карта."
     }]
     """
+    if df.empty:  # Если данных нет, функция возвращает пустой список
+        print("Ошибка. Данные для анализа не обнаружены.")
+        return []
 
     # Отбор только успешных транзакций для формирования ТОП-5 по сумме
     filter_ok_transactions = df[df["Статус"] == "OK"]
+    if filter_ok_transactions.empty:  # Если данных после фильтрации нет, функция возвращает пустой список
+        print("Ошибка. После фильтрации по статусу операции данные для анализа не обнаружены.")
+        return []
+
     # Сортировка транзакций по убыванию суммы
     sorted_by_sum_df = filter_ok_transactions.sort_values(by="Сумма операции с округлением", ascending=False)
     # Выбор первых 5 транзакций по размеру суммы
@@ -180,9 +193,11 @@ def actual_currencies(base_currency: str = "RUB") -> list[dict]:
     except json.JSONDecodeError:
         print("Ошибка декодирования файла.")
         logger.error("Произошла ошибка декодирования файла.")
+        return []
     except FileNotFoundError:
         print(f"Ошибка! Файл по адресу {PATH_TO_USER_SETTINGS_JSON} не найден.")
         logger.error(f"Ошибка! Файл по адресу {PATH_TO_USER_SETTINGS_JSON} не найден.")
+        return []
 
     url = "https://api.apilayer.com/exchangerates_data/latest"  # URL для API-запроса текущих курсов валют
     # Ниже - параметры для запроса (базовая валюта (RUB) и список валют для получения курса относительно базовой,
@@ -235,9 +250,12 @@ def actual_stocks() -> list[dict]:
     except json.JSONDecodeError:
         print("Ошибка декодирования файла.")
         logger.error("Произошла ошибка декодирования файла.")
+        return []
+
     except FileNotFoundError:
         print(f"Ошибка! Файл по адресу {PATH_TO_USER_SETTINGS_JSON} не найден.")
         logger.error(f"Ошибка! Файл по адресу {PATH_TO_USER_SETTINGS_JSON} не найден.")
+        return []
 
     url = "http://api.marketstack.com/v1/eod/latest"  # URL для API-запроса курсов акций (End-of-Day Data)
     # Ниже - параметры для запроса (тикеры акций, перечисленные через запятую)
