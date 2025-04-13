@@ -4,7 +4,6 @@ import os
 
 import pandas as pd
 
-
 PATH_TO_LOG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs", "services.log")
 
 logger = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ logger.addHandler(file_handler)
 
 def get_high_cashback_categories(df: pd.DataFrame, year: str, month: str) -> str:
     """
-    Функция, из раздела "Сервисы" анализирующая, какие категории были наиболее выгодными в заданном месяце для выбора
+    Функция, из раздела "Сервисы", анализирующая, какие категории были наиболее выгодными в заданном месяце для выбора
     в качестве категорий повышенного кешбэка.
     Принимает на вход данные для анализа в формате DataFrame, год и месяц в формате str.
     Возвращает JSON-ответ с анализом, сколько на каждой категории расходов можно заработать кешбэка в указанном

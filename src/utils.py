@@ -11,8 +11,6 @@ PATH_TO_EXCEL = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data",
 PATH_TO_USER_SETTINGS_JSON = os.path.join(os.path.dirname(os.path.dirname(__file__)), "user_settings.json")
 PATH_TO_LOG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs", "utils.log")
 
-
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 file_handler = logging.FileHandler(PATH_TO_LOG_FILE, "w", encoding="utf-8")
@@ -72,7 +70,6 @@ def get_slice_of_data(start_date: datetime, end_date: datetime) -> pd.DataFrame:
     slice_df = df[df["Дата операции"].between(start_date, end_date)]  # Выборка транзакций для заданного
     # промежутка дат
     logger.debug(f"Сделана выборка транзакций в диапазоне дат {start_date} - {end_date}.")
-
 
     return slice_df
 
@@ -174,7 +171,7 @@ def top_5_transactions_by_sum(df: pd.DataFrame) -> list[dict]:
 
 def actual_currencies(base_currency: str = "RUB") -> list[dict]:
     """
-    Функция получения актуальных курсов валют (из файла `user_settings.json`).
+    Функция получения актуальных курсов валют (тикеры загружаются из файла `user_settings.json`).
     Принимает строку с тикером базовой валюты, относительно которой рассчитываются курсы валют из файла
     `user_settings.json` (по умолчанию - "RUB").
     Возвращает список словарей в формате:

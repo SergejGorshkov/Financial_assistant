@@ -3,7 +3,6 @@ from src.services import get_high_cashback_categories
 from src.utils import read_data_file
 from src.views import main_info
 
-
 if __name__ == "__main__":
 
     df = read_data_file()
@@ -16,4 +15,3 @@ if __name__ == "__main__":
 
     result_services = get_high_cashback_categories(df, "2020", "2")
     print(result_services)
-

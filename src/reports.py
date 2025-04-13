@@ -2,10 +2,9 @@ import logging
 import os
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Optional, Any, Callable
+from typing import Any, Callable, Optional
 
 import pandas as pd
-
 
 PATH_TO_LOG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs", "reports.log")
 
@@ -15,6 +14,7 @@ file_handler = logging.FileHandler(PATH_TO_LOG_FILE, "w", encoding="utf-8")
 file_formatter = logging.Formatter("%(asctime)s - %(filename)s - %(funcName)s - %(levelname)s: %(message)s")
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
+
 
 def write_result_to_file(filename: str = "") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Декоратор, который автоматически записывает в файл результат выполнения декорируемых функций.
@@ -49,11 +49,13 @@ def write_result_to_file(filename: str = "") -> Callable[[Callable[..., Any]], C
 
     return decorator
 
+
 @write_result_to_file()
-def spending_by_category(transactions: pd.DataFrame, category: str, start_date: Optional[str] = None) -> pd.DataFrame:
+def spending_by_category(transactions: pd.DataFrame, category: str,
+                         start_date: Optional[str | datetime] = None) -> pd.DataFrame:
     """
     Функция, выбирающая из данных о транзакциях траты по заданной категории.
-    Принимает данные о транзакциях в формате DataFrame, название категории в формате str, опциональную дату
+    Принимает данные о транзакциях в формате DataFrame, название категории в формате str, опционально дату
     в формате str (ДД.ММ.ГГГГ). Если дата не передана, то берется текущая дата.
     Возвращает траты по заданной категории за последние три месяца (от переданной или текущей даты) в DataFrame.
     """
@@ -70,7 +72,9 @@ def spending_by_category(transactions: pd.DataFrame, category: str, start_date: 
 
     slice_df = transactions[transactions["Дата операции"].between(end_date, start_date)]  # Выборка транзакций для
     # заданного промежутка дат
-    logger.debug(f"Сделана выборка транзакций в диапазоне дат {end_date.strftime('%d.%m.%Y')} - {start_date.strftime('%d.%m.%Y')}.")
+    logger.debug(
+        f"Сделана выборка транзакций в диапазоне дат {end_date.strftime('%d.%m.%Y')} - {start_date.strftime(
+            '%d.%m.%Y')}.")
 
     # DataFrame только с расходами (включая переводы)
     spent_df = slice_df[slice_df["Сумма платежа"] < 0]

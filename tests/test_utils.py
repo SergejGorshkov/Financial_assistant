@@ -1,12 +1,20 @@
 import json
 from datetime import datetime
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
 import pandas as pd
 import pytest
 
-from src.utils import get_date_range, read_data_file, get_slice_of_data, get_time_for_greeting, get_summary_card_data, \
-    top_5_transactions_by_sum, actual_currencies, actual_stocks
+from src.utils import (
+    actual_currencies,
+    actual_stocks,
+    get_date_range,
+    get_slice_of_data,
+    get_summary_card_data,
+    get_time_for_greeting,
+    read_data_file,
+    top_5_transactions_by_sum,
+)
 
 
 def test_get_date_range_success(test_date):
@@ -22,6 +30,7 @@ def test_get_date_range_success(test_date):
 
 ##################################################################################################
 
+
 def test_read_data_file_success():
     """Тест успешного чтения файла"""
     # Создаем тестовый DataFrame
@@ -29,18 +38,19 @@ def test_read_data_file_success():
         "Номер карты": ["*5456", None],
         "Дата операции": ["01.01.2023", "15.01.2023"],
         "Сумма платежа": [-1000, -2000],
-        "Категория": ["Супермаркеты", "АЗС"]
+        "Категория": ["Супермаркеты", "АЗС"],
     }
     mock_df = pd.DataFrame(test_data)
 
     # Мокаем pd.read_excel
-    with patch('pandas.read_excel', return_value=mock_df) as mock_read:
+    with patch("pandas.read_excel", return_value=mock_df) as mock_read:
         result = read_data_file()
 
         # Проверяем вызовы
         mock_read.assert_called_once_with(
             "C:\\Users\\17\\Desktop\\Projects\\Financial_assistant\\data\\operations.xlsx",
-            sheet_name="Отчет по операциям")
+            sheet_name="Отчет по операциям",
+        )
 
         # Проверяем результат
         assert isinstance(result, pd.DataFrame)
@@ -53,7 +63,7 @@ def test_read_data_file_success():
 def test_read_data_file_empty():
     """Тест с пустым файлом"""
     # Мокаем pd.read_excel для возврата пустого DataFrame
-    with patch('pandas.read_excel', return_value=pd.DataFrame()):
+    with patch("pandas.read_excel", return_value=pd.DataFrame()):
         result = read_data_file()
 
         # Проверяем результат
@@ -64,7 +74,7 @@ def test_read_data_file_empty():
 ##################################################################################################
 def test_get_slice_of_data_success(sample_dataframe):
     """Тест на успешную работу функции"""
-    with patch('src.utils.read_data_file', return_value=sample_dataframe):
+    with patch("src.utils.read_data_file", return_value=sample_dataframe):
         start_date = datetime(2025, 1, 1)
         end_date = datetime(2025, 1, 31)
 
@@ -77,7 +87,7 @@ def test_get_slice_of_data_success(sample_dataframe):
 
 def test_get_slice_of_data_empty_result(sample_dataframe):
     """Тест случая, когда нет данных в указанном диапазоне"""
-    with patch('src.utils.read_data_file', return_value=sample_dataframe):
+    with patch("src.utils.read_data_file", return_value=sample_dataframe):
         start_date = datetime(2025, 10, 1)
         end_date = datetime(2025, 12, 30)
 
@@ -88,7 +98,7 @@ def test_get_slice_of_data_empty_result(sample_dataframe):
 
 def test_get_slice_of_data_empty_input():
     """Тест на случай чтения пустого файла"""
-    with patch('src.utils.read_data_file', return_value=pd.DataFrame()):
+    with patch("src.utils.read_data_file", return_value=pd.DataFrame()):
         start_date = datetime(2025, 1, 1)
         end_date = datetime(2025, 1, 30)
 
@@ -98,20 +108,23 @@ def test_get_slice_of_data_empty_input():
 
 
 ###############################################################################################
-@pytest.mark.parametrize("hour, expected_greeting", [
-    (4, "Доброй ночи!"),
-    (5, "Доброе утро!"),
-    (11, "Доброе утро!"),
-    (12, "Добрый день!"),
-    (17, "Добрый день!"),
-    (18, "Добрый вечер!"),
-    (22, "Добрый вечер!"),
-    (23, "Доброй ночи!"),
-    (0, "Доброй ночи!"),
-])
+@pytest.mark.parametrize(
+    "hour, expected_greeting",
+    [
+        (4, "Доброй ночи!"),
+        (5, "Доброе утро!"),
+        (11, "Доброе утро!"),
+        (12, "Добрый день!"),
+        (17, "Добрый день!"),
+        (18, "Добрый вечер!"),
+        (22, "Добрый вечер!"),
+        (23, "Доброй ночи!"),
+        (0, "Доброй ночи!"),
+    ],
+)
 def test_get_time_for_greeting(hour, expected_greeting):
     """Тест всех временных диапазонов с параметризацией"""
-    with patch('src.utils.datetime') as mock_datetime:
+    with patch("src.utils.datetime") as mock_datetime:
         mock_datetime.now.return_value = datetime(2023, 1, 1, hour)
         assert get_time_for_greeting() == expected_greeting
 
@@ -129,7 +142,7 @@ def test_get_summary_card_data_success(sample_data_with_cards):
     expected = [
         {"last_digits": "2222", "total_spent": 2000.0, "cashback": 20.0},
         {"last_digits": "3333", "total_spent": 1500.0, "cashback": 15.0},
-        {"last_digits": "5678", "total_spent": 1500.0, "cashback": 15.0}
+        {"last_digits": "5678", "total_spent": 1500.0, "cashback": 15.0},
     ]
 
     assert result == expected
@@ -170,6 +183,7 @@ def test_top_5_transactions_by_sum_with_failed_status(sample_data_for_top_5_tran
 
 ###############################################################################################
 
+
 def test_actual_currencies_successful(mock_user_settings_for_currencies, mock_api_response_for_currencies):
     """Тест успешного получения курсов валют"""
     # Мокаем файл с настройками
@@ -209,6 +223,7 @@ def test_actual_currencies_if_invalid_json():
 
 
 ###############################################################################################
+
 
 def test_actual_stocks_successful(mock_user_settings_for_stocks, mock_api_response_for_stocks):
     """Тест успешного получения курсов акций"""
